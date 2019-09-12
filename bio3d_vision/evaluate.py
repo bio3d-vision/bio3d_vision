@@ -9,6 +9,7 @@ from util import *
 from rgb_to_index import *
 from load import *
 
+
 def adj_rand_index(y_pred: np.ndarray,
                    y_true: np.ndarray):
     """Compute the adjusted rand index.
@@ -16,6 +17,36 @@ def adj_rand_index(y_pred: np.ndarray,
     y_pred = np.asarray(y_pred).flatten()
     y_true = np.asarray(y_true).flatten()
     return adjusted_rand_score(y_true, y_pred)
+
+
+def extract_bboxes(masks):
+    """Compute bounding boxes from masks.
+    masks: [num_instances, z, x, y]. Mask voxels are either 1 or 0.
+    Returns: bbox array [num_instances, (z1, x1, y1, z2, x2, y2)].
+    """
+    num_instances = masks.shape[0]
+    boxes = np.zeros((num_instances, 6), dtype=np.int32)
+    for i in range(num_instances):
+        m = np.squeeze(masks[i, :, :, :])
+        # Bounding box
+        z_coord = np.where(np.any(m, axis=2))[0]
+        x_coord = np.where(np.any(m, axis=0))[0]
+        y_coord = np.where(np.any(m, axis=0))[1]
+        if z_coord.shape[0]:
+            z1, z2 = z_coord.min(), z_coord.max()
+            x1, x2 = x_coord.min(), x_coord.max()
+            y1, y2 = y_coord.min(), y_coord.max()
+            # z2, x2 and y2 should not be part of the box. Increment by 1.
+            z2 += 1
+            x2 += 1
+            y2 += 1
+        else:
+            # No masks for this instance. Might happen due to
+            # resizing or cropping. Set bbox to zeros
+            z1, z2, x1, x2, y1, y2 = 0, 0, 0, 0, 0, 0
+        boxes[i] = np.array([z1, x1, y1, z2, x2, y2])
+    return boxes.astype(np.int32)
+
 
 def instance_indices_to_masks(indices: np.ndarray):
     """Converts a 3D array [z, x, y] of indices to a binary array
@@ -45,6 +76,7 @@ def mean_iou(y_pred: np.ndarray,
     union = ground_truth_set + predicted_set - intersection
     IoU = intersection / union.astype(np.float32)
     return np.mean(IoU)
+
 
 def plot_confusion_matrix(y_pred: np.ndarray,
                           y_true: np.ndarray,
@@ -103,22 +135,33 @@ if __name__=="__main__":
     pred = [1, 1, 1, 2, 0, 0, 3]
     classes = list(range(4))
     #plot_confusion_matrix(true, pred, classes=classes, normalize=True)
-    #convert_platelet_files(os.path.join('..', 'platelet-em'))
+    # convert_platelet_files(os.path.join('..', '..',  '..', 'platelet-em'))
     indices = load(data_dir=os.path.join('..',
-                                           'platelet-em',
-                                           'labels-instance'),
+                                         '..',
+                                         '..',
+                                         'platelet-em',
+                                         'labels-instance'),
                 data_file=os.path.join('24-instance-cell.tif'),
                 data_type=np.int32)
     # Slice big volume for faster runtime
-    indices = indices[:1, :, :]
+    indices = indices[:2, :, :]
     masks = instance_indices_to_masks(indices)
+    print(masks.shape)
+    boxes = extract_bboxes(masks)
     # Visualize masks
     instances = [i for i in np.unique(indices) if i != 0]
-    for i in [8]:#range(len(instances)):
+    for i in [9]:#range(len(instances)): # i=8 is problematic
         images = (indices[0], masks[i][0])
         settings = ({'cmap': 'jet'},
                     {'cmap': 'jet'})
-
         imshow(images, (10, 5), settings)
+
+    z1, x1, y1, z2, x2, y2 = boxes[i]
+    print(z1, z2, x1, x2, y1, y2)
+    print(indices[0, x1:x2].shape)
+    images = (indices[0, x1:x2, y1:y2], masks[i][0, x1:x2, y1:y2])
+    settings = ({'cmap': 'jet'},
+                {'cmap': 'jet'})
+    imshow(images, ((y2-y1)*10/800, (x2-x1)*5/800), settings)
     plt.show()
 
