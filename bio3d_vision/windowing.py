@@ -10,7 +10,7 @@ from typing import List, Sequence, Generator
 
 
 # Random States
-corner_generation_random_state = np.random.RandomState()
+_corner_generation_random_state = np.random.RandomState()
 
 
 def window_generator(data_volume: np.ndarray,
@@ -214,7 +214,7 @@ def gen_corner_points(spatial_shape: Sequence[int],
         # Create a new seed
         random_seed = np.random.randint(np.iinfo(np.int32).max)
 
-    corner_generation_random_state.seed(random_seed)
+    _corner_generation_random_state.seed(random_seed)
 
     corners = []
 
@@ -240,7 +240,7 @@ def gen_corner_points(spatial_shape: Sequence[int],
 
                 # Output window corner point coordinates along axis k
                 corners_k = \
-                    [corner_generation_random_state.randint(bins[i], bins[i + 1])
+                    [_corner_generation_random_state.randint(bins[i], bins[i + 1])
                      for i in range(n_bins)]
 
             else:

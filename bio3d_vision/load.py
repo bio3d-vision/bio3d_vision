@@ -1,10 +1,13 @@
 """Function for loading bio3d-vision dataset files on disk into numpy.
 
 """
+import json
 import os
 
 import numpy as np
 import tifffile as tif
+
+from .convert import dict_to_indexed
 
 from typing import Optional, Union
 
@@ -32,9 +35,18 @@ def load(data_dir: Optional[str] = os.path.join('platelet-em', 'images'),
     """
     # Load volume
     if isinstance(data_dir, str) and isinstance(data_file, str):
-        data_volume = \
-            tif.imread(os.path.join(data_dir,
-                                    data_file)).astype(data_type)
+        data_path = os.path.join(data_dir, data_file)
+        data_ext = os.path.splitext(data_file)[1].lower()
+        if 'tif' in data_ext:
+            data_volume = \
+                tif.imread(data_path).astype(data_type)
+        elif 'json' in data_ext:
+            with open(data_path, 'r') as fd:
+                label_dict = json.load(fd)
+                data_volume = dict_to_indexed(label_dict).astype(data_type)
+        else:
+            raise ValueError('data_file extension not recognized.')
+
     elif isinstance(data_file, np.ndarray):
         data_volume = data_file.astype(data_type)
     else:

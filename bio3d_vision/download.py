@@ -8,32 +8,24 @@ import tarfile
 from tqdm import tqdm
 import zipfile
 
-from .rgb_to_index import convert_platelet_files
-
 
 # Last updated 00:28 11 September 2019
 PLATELET_EM_INFO = {
-    'url': "https://www.dropbox.com/s/lo6i7v2mc9z2wft/images-and"
-           "-labels.zip?dl=1",
+    'url': "https://www.dropbox.com/s/ra5gt32qswbfr34/images_and_labels.zip"
+           "?dl=1",
     'filename': 'platelet-em.zip',
-    'md5': 'e3a7bb0b0099220781bfea3e5ee9430c',
+    'md5': 'f07632c95cacb3f50496f4b2b35624f3',
     'filedirs': ['images', 'labels-semantic', 'labels-instance']}
 
 
-def download_if_needed(
+def download(
         dataset_name: str,
-        download_dir: str,
-        convert_labels_to_indexed: bool = False):
+        download_dir: str):
     """Download a named dataset from the bio3d-vision collection.
-
-    If specified, convert any appropriate dataset label files from an RGB
-    image to an indexed image, a representation more suited to machine
-    learning applications.
 
     Args:
         dataset_name:
         download_dir:
-        convert_labels_to_indexed:
 
     Returns: None
 
@@ -41,14 +33,14 @@ def download_if_needed(
     # Currently only the 'platelet-em' dataset is available
     if dataset_name == 'platelet-em':
         dataset_info = PLATELET_EM_INFO
-        convert_label_files = convert_platelet_files
     else:
         raise ValueError(f"Dataset name {dataset_name} not recognized. "
-                         f"Possible choices are: 'platelet-em'.")
+                         f"Possible choices are: platelet-em.")
 
     dataset_dir = os.path.join(download_dir, dataset_name)
     if os.path.exists(dataset_dir):
-        print(f'Found {dataset_name} dataset already in {download_dir}.')
+        print(f"Found '{dataset_name}' folder already in {download_dir}, "
+              f"skipping download.")
     else:
         print(f'No {dataset_name} dataset found, downloading...')
         download_and_extract(
@@ -56,10 +48,6 @@ def download_if_needed(
             download_dir,
             filename=dataset_info['filename'],
             md5=dataset_info['md5'])
-
-        if convert_labels_to_indexed:
-            print('Converting dataset label file TIFs from RGB to indexed.')
-            convert_label_files(dataset_dir)
 
     pass
 
@@ -192,12 +180,11 @@ def extract_archive(from_path, to_path=None, remove_finished=True):
 
 def download_and_extract(url, 
                          download_root,
-                         filename = None,
-                         md5 = None, 
-                         remove_finished = True):
+                         filename=None,
+                         md5=None,
+                         remove_finished=True):
 
     download_root = os.path.expanduser(download_root)
-    download_root = os.path.join(download_root, 'platelet-em')
     os.makedirs(download_root, exist_ok=True)
     if not filename:
         filename = os.path.basename(url)
