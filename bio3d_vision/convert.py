@@ -26,11 +26,73 @@ img_as_dict = {
   2: '1 3 11 1 33 2 42 3 87 2'}
 
 """
-import numpy as np
+import json
+import os
 
-from typing import Any, Dict, Sequence, Union
+import matplotlib
+import numpy as np
+import tifffile as tif
+
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
 LabelDict = Dict[Union[int, str], Union[str, Dict[str, Any]]]
+
+
+def json_to_indexed_tif(json_in: str, tif_out: Optional[str] = None):
+    """Convert a dict-encoded label, saved as a JSON file, to a TIF volume.
+
+    Args:
+        json_in (str): Input JSON file name.
+        tif_out (Optional[str]): Output TIF file name. If None, use the same
+            base name as `json_in`.
+
+    Returns: None
+
+    """
+    if tif_out is None:
+        base, ext = os.path.splitext(json_in)
+        tif_out = base + '.tif'
+
+    with open(json_in, 'r') as fd:
+        label_dict = json.load(fd)
+
+    label_arr = dict_to_indexed(label_dict)
+
+    tif.imsave(tif_out, label_arr, compress=6)
+    pass
+
+
+def json_to_rgb_tif(
+        json_in: str,
+        cmap: matplotlib.colors.LinearSegmentedColormap,
+        background_color: Optional[Tuple[float, ...]] = None,
+        tif_out: Optional[str] = None):
+    """
+
+    Args:
+        json_in:
+        cmap:
+        background_color:
+        tif_out:
+
+    Returns: None
+
+    """
+    if tif_out is None:
+        base, ext = os.path.splitext(json_in)
+        tif_out = base + '.tif'
+
+    if background_color is not None:
+        cmap = replace_background(cmap, background_color)
+
+    with open(json_in, 'r') as fd:
+        label_dict = json.load(fd)
+
+    label_arr = dict_to_indexed(label_dict)
+    label_rgba = (255 * cmap(label_arr / label_arr.max())).astype(np.uint8)
+
+    tif.imsave(tif_out, label_rgba, compress=6)
+    pass
 
 
 def dict_to_indexed(
@@ -123,3 +185,10 @@ def binary_rle_encode(img: np.ndarray) -> str:
     runs = np.where(pixels[1:] != pixels[:-1])[0] + 1
     runs[1::2] -= runs[::2]
     return ' '.join(str(x) for x in runs)
+
+
+def replace_background(cmap, background_color):
+    cmap_list = list(cmap(np.linspace(0, 1, 256)))
+    cmap_list[0] = background_color
+    new_cmap = cmap.from_list('newcmap', cmap_list, N=256)
+    return new_cmap

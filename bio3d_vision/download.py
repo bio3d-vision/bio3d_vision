@@ -11,10 +11,10 @@ import zipfile
 
 # Last updated 00:28 11 September 2019
 PLATELET_EM_INFO = {
-    'url': "https://www.dropbox.com/s/ra5gt32qswbfr34/images_and_labels.zip"
-           "?dl=1",
+    'url': "https://www.dropbox.com/s/tgmwv9kegijfrao/"
+           "images_and_labels_json.zip?dl=1",
     'filename': 'platelet-em.zip',
-    'md5': 'f07632c95cacb3f50496f4b2b35624f3',
+    'md5': '23891d451dffb8709c4cf719c1a389d4',
     'filedirs': ['images', 'labels-semantic', 'labels-instance']}
 
 
