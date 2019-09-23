@@ -10,9 +10,9 @@ Example: Synthetic blob image with two nonzero values.
 
 blob1 = skimage.data.binary_blobs(length=10, seed=1, volume_fraction=0.2)
 blob2 = skimage.data.binary_blobs(length=10, seed=2, volume_fraction=0.1)
-img = np.zeros((10, 10), dtype=int)
-img[blob1] = 1
-img[blob2] = 2
+image = np.zeros((10, 10), dtype=int)
+image[blob1] = 1
+image[blob2] = 2
 
 # Basic encoder
 img_as_dict = {int(i): binary_rle_encode(img == i)
@@ -21,9 +21,9 @@ img_as_dict['.info'] = {'shape': img.shape, 'dtype': img.dtype}
 
 # `img`'s representation as a dict:
 img_as_dict = {
-  '.info': {'dtype': np.int, 'shape': (8, 8)},
-  1: '7 2 12 1 21 1 40 1 50 4 60 3 68 1 71 1 81 1',
-  2: '1 3 11 1 33 2 42 3 87 2'}
+  '.info': {'dtype': 'np.int', 'shape': (10, 10)},
+  '1': '7 2 12 1 21 1 40 1 50 4 60 3 68 1 71 1 81 1',
+  '2': '1 3 11 1 33 2 42 3 87 2'}
 
 """
 import json
@@ -132,7 +132,7 @@ def indexed_to_dict(label_img: np.ndarray, **kwargs) -> LabelDict:
             run-length encoded strings.
 
     """
-    as_dict = {int(i): binary_rle_encode(label_img == i)
+    as_dict = {str(int(i)): binary_rle_encode(label_img == i)
                for i in np.unique(label_img) if i != 0}
     as_dict['.info'] = {'shape': label_img.shape,
                         'dtype': str(label_img.dtype),
