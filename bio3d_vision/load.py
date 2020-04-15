@@ -18,7 +18,7 @@ VolSource = Union[str, np.ndarray]
 
 def load(data_dir: Optional[str] = os.path.join('platelet-em', 'images'),
          data_file: Optional[Union[str, np.ndarray]] = '50-images.tif',
-         data_type: Union[np.float32, np.int32] = np.float32):
+         normalization: Optional[str] = None):
     """Load data from the file system.
 
     Args:
@@ -26,9 +26,10 @@ def load(data_dir: Optional[str] = os.path.join('platelet-em', 'images'),
             data.
         data_file (Optional[VolSource]): Name of the data image
             volume within the data_dir, or a numpy array.
-        data_range (Optional[DataRange]): Range of the loaded
-            volume to use, represented as a tuple of 2 or 3 slice objects.
-        data_type (Union[np.float32, np.int32]): Cast the data to this type.
+        normalization (Optional[str]): Data normalization strategy. If none is
+            supplied, no normalization takes place. If 'zero_mean' is supplied,
+            data is translated and scaled to have mean 0 and standard deviation
+            1. If 'white_balance' is supplied, auto white balancing is applied.
 
     Returns: (np.ndarray) The data volume loaded.
 
@@ -38,23 +39,29 @@ def load(data_dir: Optional[str] = os.path.join('platelet-em', 'images'),
         data_path = os.path.join(data_dir, data_file)
         data_ext = os.path.splitext(data_file)[1].lower()
         if 'tif' in data_ext:
-            data_volume = \
-                tif.imread(data_path).astype(data_type)
+            data_volume = tif.imread(data_path)
         elif 'json' in data_ext:
             with open(data_path, 'r') as fd:
                 label_dict = json.load(fd)
-                data_volume = dict_to_indexed(label_dict).astype(data_type)
+                data_volume = dict_to_indexed(label_dict)
         else:
             raise ValueError('data_file extension not recognized.')
 
     elif isinstance(data_file, np.ndarray):
-        data_volume = data_file.astype(data_type)
+        data_volume = data_file
     else:
         raise ValueError(f'Need to either specify strings for both data_dir'
                          f'and data_file or supply data_file as np.ndarray. ')
 
-    # Make a 2D volume 3D
-    if data_volume.ndim == 2:
-        data_volume = np.expand_dims(data_volume, axis=0)
+    if normalization == 'zero_mean':
+        data_volume = data_volume - data_volume.mean()
+        data_volume = data_volume / data_volume.std()
+    elif normalization == 'white_balance':
+        perc = 0.05
+        mi = np.percentile(data_volume, perc)
+        ma = np.percentile(data_volume, 100 - perc)
+        data_volume = np.float32(np.clip((data_volume - mi) / (ma - mi), 0, 255))
+    elif isinstance(normalization, str):
+        raise ValueError(f'Unrecognized value for `normalization')
 
-    return np.squeeze(data_volume)
+    return data_volume

@@ -35,6 +35,14 @@ def deform(volume: np.ndarray,
 
     deformation_random_state.seed(random_seed)
 
+    # Backwards-compatibility hack
+    if 'deform_frequency' in deformation_settings:
+        deformation_settings['scale'] = deformation_settings['deform_frequency']
+    if 'deform_amplitude' in deformation_settings:
+        deformation_settings['alpha'] = deformation_settings['deform_amplitude']
+    if 'deform_sigma' in deformation_settings:
+        deformation_settings['sigma'] = deformation_settings['deform_sigma']
+
     # Image deformation default settings
     if deformation_settings is None:
         deformation_settings = {}
