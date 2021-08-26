@@ -1,6 +1,8 @@
 """Utility functions used in conjunction with the bio3d_vision package.
 
 """
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
